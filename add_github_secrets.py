@@ -2,6 +2,7 @@
 """
 Add GitHub Secrets for Cloud Automation
 This script adds your Naukri credentials as GitHub Secrets
+Requires: GitHub CLI (gh) to be installed and authenticated
 """
 
 import json
@@ -37,18 +38,24 @@ def add_github_secret(secret_name, secret_value, repo_path):
             "-R", repo_path
         ]
         
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
         
         if result.returncode == 0:
             print(f"✅ Added secret: {secret_name}")
             return True
         else:
             print(f"❌ Failed to add secret: {secret_name}")
-            print(f"   Error: {result.stderr}")
+            if "not found" in result.stderr.lower():
+                print("   GitHub CLI not installed or not in PATH")
+            else:
+                print(f"   Error: {result.stderr}")
             return False
     except FileNotFoundError:
         print("❌ GitHub CLI (gh) not found!")
         print("   Install it from: https://cli.github.com/")
+        return False
+    except Exception as e:
+        print(f"❌ Error: {e}")
         return False
 
 
