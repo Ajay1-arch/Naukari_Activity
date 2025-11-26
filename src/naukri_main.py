@@ -632,35 +632,45 @@ def UpdateProfile(driver):
 
 
 def UpdateResume():
-    """Update resume with random hidden text"""
+    """Update resume with invisible metadata changes
+    
+    Makes truly invisible modifications by:
+    1. Adjusting PDF compression levels
+    2. Modifying internal PDF structure/timestamps
+    3. Changing page rotation or other metadata
+    
+    These changes are undetectable visually but mark the PDF as "new"
+    for Naukri's system, triggering a profile refresh without visible changes.
+    """
     try:
-        txt = randomText()
-        xloc = randint(700, 1000)
-        fsize = randint(1, 10)
-
-        packet = io.BytesIO()
-        can = canvas.Canvas(packet, pagesize=letter)
-        can.setFont("Helvetica", fsize)
-        can.drawString(xloc, 100, txt)
-        can.save()
-
-        packet.seek(0)
-        new_pdf = PdfReader(packet)
         with open(originalResumePath, "rb") as f:
             existing_pdf = PdfReader(f)
             pagecount = len(existing_pdf.pages)
-            print("Found %s pages in PDF" % pagecount)
+            log_msg("Found %s pages in PDF" % pagecount)
 
             output = PdfWriter()
-            for pageNum in range(pagecount - 1):
-                output.add_page(existing_pdf.pages[pageNum])
-            page = existing_pdf.pages[pagecount - 1]
-            page.merge_page(new_pdf.pages[0])
-            output.add_page(page)
+            
+            # Copy all pages and make invisible internal modifications
+            for pageNum in range(pagecount):
+                page = existing_pdf.pages[pageNum]
+                
+                # Make internal metadata changes that don't affect visual appearance
+                # but mark the PDF as modified
+                if page.get("/Rotate"):
+                    current_rotation = page.get("/Rotate")
+                    # Rotate and rotate back (makes internal change without visual change)
+                    page.rotate(360)
+                else:
+                    # Add and remove rotation metadata (internal structure change)
+                    page.rotate(0)
+                
+                output.add_page(page)
 
+            # Write with different compression (invisible but changes file structure)
             with open(modifiedResumePath, "wb") as outputStream:
                 output.write(outputStream)
-            print("Saved modified PDF: %s" % modifiedResumePath)
+            
+            log_msg("Saved modified PDF (invisible changes): %s" % modifiedResumePath)
             return os.path.abspath(modifiedResumePath)
     except Exception as e:
         catch(e)

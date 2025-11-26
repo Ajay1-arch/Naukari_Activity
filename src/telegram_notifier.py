@@ -6,7 +6,7 @@ Sends status updates and results to Telegram via Bot API
 import requests
 import logging
 from typing import Optional
-from src.config_loader import ConfigLoader
+from config_loader import get_secrets
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +17,10 @@ class TelegramNotifier:
     def __init__(self):
         """Initialize Telegram notifier with credentials from secrets"""
         try:
-            config = ConfigLoader()
-            secrets = config.get_secrets()
+            secrets_manager = get_secrets()
             
-            self.bot_token = secrets.get('telegram', {}).get('bot_token')
-            self.chat_id = secrets.get('telegram', {}).get('chat_id')
+            self.bot_token = secrets_manager.get('telegram.bot_token')
+            self.chat_id = secrets_manager.get('telegram.chat_id')
             self.enabled = bool(self.bot_token and self.chat_id)
             
             if not self.enabled:

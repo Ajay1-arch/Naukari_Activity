@@ -1,9 +1,9 @@
 {
   "scheduler_started": "2025-11-26T12:03:41.657127",
-  "total_runs": 1,
-  "successful_runs": 1,
+  "total_runs": 2,
+  "successful_runs": 2,
   "failed_runs": 0,
-  "last_run": "2025-11-26T12:06:11.471638",
+  "last_run": "2025-11-26T12:58:46.222172",
   "last_run_status": "SUCCESS",
   "runs": [
     {
@@ -11,6 +11,13 @@
       "timestamp": "2025-11-26T12:06:11.471580",
       "success": true,
       "duration_seconds": 149.81239366531372,
+      "error": null
+    },
+    {
+      "run_number": 2,
+      "timestamp": "2025-11-26T12:58:46.222130",
+      "success": true,
+      "duration_seconds": 150.1870002746582,
       "error": null
     }
   ]
