@@ -17,6 +17,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent))
 
 from config_loader import get_config
+from telegram_notifier import get_notifier
 
 
 class NaukriScheduler:
@@ -25,6 +26,7 @@ class NaukriScheduler:
     def __init__(self):
         self.config = get_config()
         self.logger = self._setup_logger()
+        self.notifier = get_notifier()
         self.running = True
         self.progress_file = None
         self.progress_data = {}
@@ -161,11 +163,22 @@ class NaukriScheduler:
             duration = time.time() - start_time
             self.logger.info(f"[Run #{run_number}] Script completed successfully in {duration:.1f} seconds")
             self._log_progress(run_number, True, duration)
+            
+            # Send success notification
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.notifier.send_success_notification(run_number, timestamp)
+            
             return True
         except Exception as e:
             duration = time.time() - start_time
-            self.logger.error(f"[Run #{run_number}] Script failed after {duration:.1f} seconds: {e}", exc_info=True)
-            self._log_progress(run_number, False, duration, str(e))
+            error_msg = str(e)
+            self.logger.error(f"[Run #{run_number}] Script failed after {duration:.1f} seconds: {error_msg}", exc_info=True)
+            self._log_progress(run_number, False, duration, error_msg)
+            
+            # Send failure notification
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.notifier.send_failure_notification(run_number, timestamp, error_msg)
+            
             return False
     
     def start(self):
@@ -175,6 +188,9 @@ class NaukriScheduler:
         self.logger.info(f"Frequency: 1.5 hours with ±15 minute random variance")
         self.logger.info(f"Configuration: Random execution times enabled")
         self.logger.info("=" * 80)
+        
+        # Send startup notification
+        self.notifier.send_startup_notification()
         
         first_run = True
         
