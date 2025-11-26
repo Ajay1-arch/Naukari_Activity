@@ -1,0 +1,11 @@
+.secrets/
+__pycache__/
+*.pyc
+*.log
+.env
+.env.local
+venv/
+.vscode/
+.DS_Store
+*.pid
+chromedriver

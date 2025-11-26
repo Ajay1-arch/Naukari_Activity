@@ -1,0 +1,4 @@
+pypdf==6.4.0
+reportlab==4.4.5
+selenium==4.38.0
+trio==0.32.0
