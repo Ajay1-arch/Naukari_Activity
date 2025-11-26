@@ -1,0 +1,73 @@
+name: Naukri Automation - Cloud Scheduler
+
+on:
+  schedule:
+    # Run every 1.5 hours
+    - cron: '0 */2 * * *'  # Every 2 hours (GitHub's minimum is every 5 minutes with Actions)
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  naukri-update:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Create secrets file
+        env:
+          NAUKRI_EMAIL: ${{ secrets.NAUKRI_EMAIL }}
+          NAUKRI_PASSWORD: ${{ secrets.NAUKRI_PASSWORD }}
+          NAUKRI_MOBILE: ${{ secrets.NAUKRI_MOBILE }}
+          RESUME_PATH: ${{ secrets.RESUME_PATH }}
+        run: |
+          mkdir -p .secrets
+          python3 << 'EOF'
+          import json
+          import os
+          
+          secrets = {
+              "naukri": {
+                  "email": os.getenv("NAUKRI_EMAIL"),
+                  "password": os.getenv("NAUKRI_PASSWORD"),
+                  "mobile": os.getenv("NAUKRI_MOBILE")
+              },
+              "resume": {
+                  "path": os.getenv("RESUME_PATH")
+              }
+          }
+          
+          with open(".secrets/secrets.json", "w") as f:
+              json.dump(secrets, f, indent=2)
+          EOF
+      
+      - name: Run Naukri Automation
+        run: |
+          python src/naukri_main.py
+      
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: naukri-logs
+          path: logs/
+          retention-days: 7
+      
+      - name: Check execution status
+        run: |
+          if [ -f logs/progress.json ]; then
+            echo "✅ Automation completed successfully"
+            cat logs/progress.json
+          else
+            echo "⚠️ Progress file not found"
+          fi
