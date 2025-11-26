@@ -331,15 +331,6 @@ def LoadNaukri(headless):
     
     log_msg("Google Chrome Launched!")
     
-    # Inject JavaScript to hide automation detection
-    driver.execute_cdp_command('Page.addScriptToEvaluateOnNewDocument', {
-        'source': '''
-            Object.defineProperty(navigator, 'webdriver', {
-                get: () => false,
-            });
-        '''
-    })
-    
     driver.implicitly_wait(5)
     driver.get(NAUKRI_LOGIN_URL)
     return driver
