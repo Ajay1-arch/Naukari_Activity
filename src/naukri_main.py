@@ -298,22 +298,48 @@ def Logout(driver):
 def LoadNaukri(headless):
     """Open Chrome to load Naukri.com"""
     options = webdriver.ChromeOptions()
+    
+    # Anti-detection measures
     options.add_argument("--disable-notifications")
     options.add_argument("--start-maximized")
     options.add_argument("--disable-popups")
     options.add_argument("--disable-gpu")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-plugins")
+    options.add_argument("--disable-sync")
+    options.add_argument("--disable-background-networking")
+    
+    # User agent to avoid detection
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    
+    # Disable headless mode detection
     if headless:
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("headless")
-
+        options.add_argument("--headless=new")
+    
+    # Disable chrome automation detection
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
+    
     driver = None
     try:
         driver = webdriver.Chrome(options=options, service=ChromeService())
     except Exception as e:
-        print(f"Error launching Chrome: {e}")
+        log_msg(f"Error launching Chrome: {e}")
         driver = webdriver.Chrome(options)
+    
     log_msg("Google Chrome Launched!")
-
+    
+    # Inject JavaScript to hide automation detection
+    driver.execute_cdp_command('Page.addScriptToEvaluateOnNewDocument', {
+        'source': '''
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => false,
+            });
+        '''
+    })
+    
     driver.implicitly_wait(5)
     driver.get(NAUKRI_LOGIN_URL)
     return driver
@@ -331,10 +357,15 @@ def naukriLogin(headless=False):
 
     try:
         driver = LoadNaukri(headless)
+        
+        # Wait for page to fully load
+        time.sleep(3)
 
         log_msg(driver.title)
         if "naukri.com" in driver.title.lower():
             log_msg("Website Loaded Successfully.")
+        else:
+            log_msg(f"Unexpected page title: {driver.title}")
 
         emailFieldElement = None
         if is_element_present(driver, By.ID, username_locator):
@@ -345,22 +376,33 @@ def naukriLogin(headless=False):
             loginButton = GetElement(driver, login_btn_locator, locator="XPATH")
         else:
             log_msg("None of the elements found to login.")
+            debug_page_elements(driver, "Login Page")
+            return (status, driver)
 
         if emailFieldElement is not None:
             emailFieldElement.clear()
             emailFieldElement.send_keys(username)
-            time.sleep(1)
+            time.sleep(2)
             passFieldElement.clear()
             passFieldElement.send_keys(password)
-            time.sleep(1)
+            time.sleep(2)
             loginButton.send_keys(Keys.ENTER)
-            time.sleep(3)
+            time.sleep(5)
 
-            print("Checking Skip button")
+            log_msg("Checking Skip button")
             if WaitTillElementPresent(driver, close_locator, "XPATH", 10):
-                GetElement(driver, close_locator, "XPATH").click()
+                try:
+                    GetElement(driver, close_locator, "XPATH").click()
+                    time.sleep(1)
+                except:
+                    pass
+            
             if WaitTillElementPresent(driver, skip_locator, "XPATH", 5):
-                GetElement(driver, skip_locator, "XPATH").click()
+                try:
+                    GetElement(driver, skip_locator, "XPATH").click()
+                    time.sleep(1)
+                except:
+                    pass
 
             if WaitTillElementPresent(driver, "ff-inventory", locator="ID", timeout=40):
                 CheckPoint = GetElement(driver, "ff-inventory", locator="ID")
@@ -373,10 +415,13 @@ def naukriLogin(headless=False):
                     return (status, driver)
             else:
                 log_msg("Unknown Login Error")
+                debug_page_elements(driver, "Post-Login Page")
                 return (status, driver)
 
     except Exception as e:
         catch(e)
+        if driver:
+            debug_page_elements(driver, "Login Error Page")
     return (status, driver)
 
 
