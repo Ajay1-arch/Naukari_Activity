@@ -113,6 +113,7 @@ class NaukriScheduler:
         success = self.progress_data["successful_runs"]
         failed = self.progress_data["failed_runs"]
         success_rate = (success / total * 100) if total > 0 else 0
+        last_status = self.progress_data.get('last_run_status', 'PENDING')
         
         summary = f"""
         ╔════════════════════════════════════════╗
@@ -122,7 +123,7 @@ class NaukriScheduler:
         ║ Successful:      {success:27} ║
         ║ Failed:          {failed:27} ║
         ║ Success Rate:    {success_rate:25.1f}% ║
-        ║ Last Run:        {self.progress_data['last_run_status']:23} ║
+        ║ Last Run:        {str(last_status):23} ║
         ╚════════════════════════════════════════╝
         """
         
