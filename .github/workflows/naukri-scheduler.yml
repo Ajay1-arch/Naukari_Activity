@@ -12,10 +12,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
       
@@ -38,12 +38,16 @@ jobs:
           
           secrets = {
               "naukri": {
-                  "email": os.getenv("NAUKRI_EMAIL"),
+                  "username": os.getenv("NAUKRI_EMAIL"),
                   "password": os.getenv("NAUKRI_PASSWORD"),
                   "mobile": os.getenv("NAUKRI_MOBILE")
               },
-              "resume": {
-                  "path": os.getenv("RESUME_PATH")
+              "paths": {
+                  "original_resume": os.getenv("RESUME_PATH"),
+                  "modified_resume": os.getenv("RESUME_PATH")
+              },
+              "chrome": {
+                  "headless": True
               }
           }
           
@@ -57,7 +61,7 @@ jobs:
       
       - name: Upload logs as artifact
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: naukri-logs
           path: logs/
